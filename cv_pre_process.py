@@ -89,6 +89,24 @@ def load_data(path_1_in_func, path_2_in_func, filename):
     with open(filename, 'wb') as fp:
         pickle.dump(saver, fp)
 
+def load_data_round_test(img, folder, filename):
+    fp = os.listdir(folder)
+    if 'desktop.ini' in fp:
+        fp.remove('desktop.ini')
+    n = len(fp)
+    img = _process_core(img)
+    group = cv_pre_process(folder)
+    paired = []
+    for img_from_g, j in zip(group, range(1, n+1)):
+        paired.append([img, img_from_g])
+        yield 100 * j / n
+    saver = {
+        'X': np.array([paired[i] for i in range(n)]),
+        'n': n,
+    }
+    with open(filename, 'wb') as fp:
+        pickle.dump(saver, fp)
+
 
 def load_data_batch_test(path_1_in_func, path_2_in_func, filename):
     fp1 = os.listdir(path_1_in_func)
@@ -107,9 +125,8 @@ def load_data_batch_test(path_1_in_func, path_2_in_func, filename):
     for img_from_1, img_from_2, j in zip(group_1, group_2, range(1, n1 + 1)):
         paired.append([img_from_1, img_from_2])
         yield 100 * j / n1
-    x = paired
     saver = {
-        'X': np.array([x[i] for i in range(n1)]),
+        'X': np.array([paired[i] for i in range(n1)]),
         'n': n1,
     }
     with open(filename, 'wb') as fp:
