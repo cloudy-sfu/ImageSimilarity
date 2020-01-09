@@ -40,7 +40,7 @@ def cv_pre_process(pictures_path, shuffle=False):
         yield img
 
 
-def load_data(path_1_in_func, path_2_in_func, filename):
+def load_data(path_1_in_func, path_2_in_func, dump_data):
     n1 = len(os.listdir(path_1_in_func))
     n2 = len(os.listdir(path_2_in_func))
     assert n1 == n2, '相似图片组含图数量不等.'
@@ -69,7 +69,7 @@ def load_data(path_1_in_func, path_2_in_func, filename):
         'Y': np.array([y[i] for i in idx]),
         'n': n1,
     }
-    with open(filename, 'wb') as fp:
+    with open(dump_data, 'wb') as fp:
         pickle.dump(saver, fp)
 
 

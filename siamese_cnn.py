@@ -79,15 +79,19 @@ class Siamese:
         y_ = self.model.predict([x[:, 0, :, :, np.newaxis], x[:, 1, :, :, np.newaxis]])
         return (y_.ravel() < 0.5).astype(int)
 
-if __name__ == "__main__":
-    with open('./demo_2.pkl', 'rb') as fp:
+def train_valid_pre_process(fp, split_point):
+    with open(fp, 'rb') as fp:
         saver = pickle.load(fp)
         X, Y, n = saver['X'], saver['Y'], saver['n']
-    train_test_split = int(2 * n * 0.8)
-    X_train = X[:train_test_split]
-    X_test = X[train_test_split:]
-    Y_train = Y[:train_test_split]
-    Y_test = Y[train_test_split:]
+    split_point = int(2 * n * split_point)
+    X_train = X[:split_point]
+    X_test = X[split_point:]
+    Y_train = Y[:split_point]
+    Y_test = Y[split_point:]
+    return X_train, X_test, Y_train, Y_test
+
+if __name__ == "__main__":
+    X_train, X_test, Y_train, Y_test = train_valid_pre_process('./demo_2.pkl', 0.8)
     siamese = Siamese()
     siamese.train(X_train, Y_train)
     siamese.valid(X_test, Y_test)
