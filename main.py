@@ -114,7 +114,7 @@ class MyWindow(QWidget):
         self.button7.resize(110, 30)
         self.button7.move(200, 210)
         self.button7.clicked.connect(lambda: self.select_file('test_single_1',
-                                                              " ;;BMP (*.bmp);;PNG (*.png)"))
+                                                              "JPEG (*.jpg);;BMP (*.bmp);;PNG (*.png)"))
         self.label11 = QLabel("Trademarks 2", self)
         self.label11.resize(170, 30)
         self.label11.move(320, 210)
@@ -213,7 +213,7 @@ class MyWindow(QWidget):
         self.button17.resize(110, 30)
         self.button17.move(200, 470)
         self.button17.clicked.connect(lambda: self.select_file('test_round_1',
-                                                               " ;;BMP (*.bmp);;PNG (*.png)"))
+                                                               "JPEG (*.jpg);;BMP (*.bmp);;PNG (*.png)"))
         self.label26 = QLabel("Gallery of Trademarks", self)
         self.label26.resize(170, 30)
         self.label26.move(320, 470)
@@ -271,7 +271,7 @@ class MyWindow(QWidget):
             self.model_test_console = ModelAction(obj1=self.current_folder['test_1'],
                                                   obj2=self.current_folder['test_2'],
                                                   model_fp=self.current_folder['model'],
-                                                  method="test_batch")
+                                                  method="batch_test")
             self.model_test_console.start()
             self.model_test_console.signal1.connect(self.data_progress_test)
             self.model_test_console.signal2.connect(self.test_reporter)
@@ -398,7 +398,7 @@ class ModelAction(QThread):
         if self.method == "batch_test":
             self._batch_test()
         elif self.method == "single_test":
-            self._batch_test()
+            self._single_test()
         elif self.method == "valid":
             self._valid()
         elif self.method == "round_test":
@@ -483,7 +483,7 @@ class ModelAction(QThread):
                 state = " Same"
             else:
                 state = " Can't Judge"
-            state = str(fn.split(".")[0]) + state
+            state = str(fn.split(".")[:-1]) + state
             self.signal2.emit(state)
         self.signal3.emit("Status of Model - Done")
 
