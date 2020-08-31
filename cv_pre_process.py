@@ -1,9 +1,29 @@
 import os
-import pickle
-import random
 import cv2
 import numpy as np
+import random
+import pickle
+import sys
 
+def printProgress(iteration, total, prefix='', suffix='', decimals=1, barLength=70):
+    """
+    Call in a loop to create a terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        barLength   - Optional  : character length of bar (Int)
+    """
+    formatStr = "{0:." + str(decimals) + "f}"
+    percent = formatStr.format(100 * (iteration / float(total)))
+    filledLength = int(round(barLength * iteration / float(total)))
+    bar = "█" * filledLength + ' ' * (barLength - filledLength)
+    sys.stdout.write('\r%s |%s| %s%s %s' % (prefix, bar, percent, '%', suffix)),
+    if iteration == total:
+        sys.stdout.write('\n')
+    sys.stdout.flush()
 
 def cv_pre_process(pictures_path, shuffle=False):
     pictures = os.listdir(pictures_path)
@@ -11,84 +31,18 @@ def cv_pre_process(pictures_path, shuffle=False):
         random.shuffle(pictures)
     for i in range(len(pictures)):
         fp = pictures_path + "/" + pictures[i]
-        img = _process_core(fp)
+        img = cv2.imread(fp)
+        img = cv2.resize(src=img, dsize=(224, 224))
+        img = np.array(img >= 200, dtype=np.uint8) * 255
+        img = cv2.cvtColor(src=img, code=cv2.COLOR_RGB2GRAY)
+        img = cv2.medianBlur(src=img, ksize=13)
+        img = cv2.Laplacian(src=img, ddepth=cv2.CV_8U, ksize=5)
         yield img
 
 
-def _process_core(fp):
-    img = cv2.imread(fp)
-    try:
-        img = cv2.resize(src=img, dsize=(100, 100))
-    except AssertionError:
-        img = np.zeros((100, 100))
-        return img
-    img = np.array(img >= 200, dtype=np.uint8) * 255
-    img = cv2.cvtColor(src=img, code=cv2.COLOR_RGB2GRAY)
-    img = cv2.medianBlur(src=img, ksize=13)
-    img = cv2.Laplacian(src=img, ddepth=cv2.CV_8U, ksize=5)
-    return img
-
-
-def load_data_round_test(img, folder, filename):
-    fp = os.listdir(folder)
-    if 'desktop.ini' in fp:
-        fp.remove('desktop.ini')
-    n = len(fp)
-    img = _process_core(img)
-    group = cv_pre_process(folder)
-    paired = []
-    for img_from_g, j in zip(group, range(1, n + 1)):
-        paired.append([img, img_from_g])
-        yield 100 * j / n
-    saver = {
-        'X': np.array([paired[i] for i in range(n)]),
-        'n': n,
-    }
-    with open(filename, 'wb') as fp:
-        pickle.dump(saver, fp)
-
-
-def load_data_batch_test(path_1_in_func, path_2_in_func, filename):
-    fp1 = os.listdir(path_1_in_func)
-    if 'desktop.ini' in fp1:
-        fp1.remove('desktop.ini')
-    n1 = len(fp1)
-    fp2 = os.listdir(path_2_in_func)
-    if 'desktop.ini' in fp2:
-        fp2.remove('desktop.ini')
-    n2 = len(fp2)
-    assert n1 == n2, '相似图片组含图数量不等.'
-    group_1 = cv_pre_process(path_1_in_func)
-    group_2 = cv_pre_process(path_2_in_func)
-
-    paired = []
-    for img_from_1, img_from_2, j in zip(group_1, group_2, range(1, n1 + 1)):
-        paired.append([img_from_1, img_from_2])
-        yield 100 * j / n1
-    saver = {
-        'X': np.array([paired[i] for i in range(n1)]),
-        'n': n1,
-    }
-    with open(filename, 'wb') as fp:
-        pickle.dump(saver, fp)
-
-
-def load_data_single_test(img_1, img_2):
-    img_1 = _process_core(img_1)
-    img_2 = _process_core(img_2)
-    paired = np.array([[img_1, img_2]])
-    return paired
-
-
-def load_data_valid(path_1_in_func, path_2_in_func, filename):
-    fp1 = os.listdir(path_1_in_func)
-    if 'desktop.ini' in fp1:
-        fp1.remove('desktop.ini')
-    n1 = len(fp1)
-    fp2 = os.listdir(path_2_in_func)
-    if 'desktop.ini' in fp2:
-        fp2.remove('desktop.ini')
-    n2 = len(fp2)
+def load_data(path_1_in_func, path_2_in_func, dump_data):
+    n1 = len(os.listdir(path_1_in_func))
+    n2 = len(os.listdir(path_2_in_func))
     assert n1 == n2, '相似图片组含图数量不等.'
     group_1 = cv_pre_process(path_1_in_func)
     group_2 = cv_pre_process(path_2_in_func)
@@ -98,22 +52,26 @@ def load_data_valid(path_1_in_func, path_2_in_func, filename):
     paired = []
     for img_from_1, img_from_2, j in zip(group_1, group_2, range(1, n1 + 1)):
         paired.append([img_from_1, img_from_2])
-        yield 50 * j / n1
+        printProgress(j, n1, prefix="create paired progress:")
     paired_labels = [1] * n1
     unpaired = []
     for img_from_1_copy, img_from_2_shuffle, j in zip(group_1_copy, group_2_shuffle, range(1, n1 + 1)):
         unpaired.append([img_from_1_copy, img_from_2_shuffle])
-        yield 50 * (1 + j / n1)
+        printProgress(j, n1, prefix="create unpaired progress:")
     unpaired_labels = [0] * n1
 
     x = paired + unpaired
     y = paired_labels + unpaired_labels
-    idx = list(range(2 * n1))
+    idx = list(range(2*n1))
     random.shuffle(idx)
     saver = {
         'X': np.array([x[i] for i in idx]),
         'Y': np.array([y[i] for i in idx]),
         'n': n1,
     }
-    with open(filename, 'wb') as fp:
+    with open(dump_data, 'wb') as fp:
         pickle.dump(saver, fp)
+
+
+if __name__ == '__main__':
+    load_data('./demo_1/group_1', './demo_1/group_2', './demo_1_224.pkl')
