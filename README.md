@@ -1,7 +1,6 @@
 # ImageSimilarity
 
 ![](https://img.shields.io/badge/dependencies-tensorflow%201.15-orange)
-![](https://img.shields.io/badge/dependencies-windows%2010-blue)
 
 The program down-samples trademarks to 100\*100 pixels, process the images with enhancing, median blur and laplace filter to extract the edge of each colorblock of the trademarks.
 
