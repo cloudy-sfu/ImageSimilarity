@@ -1,4 +1,4 @@
-# ImageSimilarity
+# Image Similarity
 
 ![](https://img.shields.io/badge/dependencies-tensorflow%201.15-orange)
 
